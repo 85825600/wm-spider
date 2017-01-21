@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.bonc.spider.dao.IDimVideoInfoDao">
+
+	<insert id="insertBean" parameterType="com.bonc.spider.entity.DimVideoInfoEntity">
+		insert into dim_video_info_temp01 (
+			id,
+			prod_dm,
+			prod_mc,
+			type_dm,
+			type_mc,
+			name,
+			url,
+			clicknum,
+			uptimes,
+			downtimes,
+			totaltime,
+			info,
+			label,
+			insert_date
+		) values (
+			#{id},
+			#{prodDm},
+			#{prodMc},
+			#{typeDm},
+			#{typeMc},
+			#{name},
+			#{url},
+			#{clicknum},
+			#{uptimes},
+			#{downtimes},
+			#{totaltime},
+			#{info},
+			#{label},
+			#{insertDate}
+		)
+	</insert>
+	
+	<insert id="insertList" parameterType="java.util.List">
+		insert into dim_video_info_temp01 (
+			id,
+			prod_dm,
+			prod_mc,
+			type_dm,
+			type_mc,
+			name,
+			url,
+			clicknum,
+			uptimes,
+			downtimes,
+			totaltime,
+			info,
+			label,
+			insert_date
+		) values
+		<foreach collection="list" item="item" index="index" separator=",">
+			(
+				#{item.id},
+				#{item.prodDm},
+				#{item.prodMc},
+				#{item.typeDm},
+				#{item.typeMc},
+				#{item.name},
+				#{item.url},
+				#{item.clicknum},
+				#{item.uptimes},
+				#{item.downtimes},
+				#{item.totaltime},
+				#{item.info},
+				#{item.label},
+				#{item.insertDate}
+			)
+		</foreach>
+	</insert>
+
+</mapper>

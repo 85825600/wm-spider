@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+	整个配置文件的根节点，包含一个或多个bean元素
+	xmlns、xmlns:xsi：最基本的命名空间定义
+	xmlns:context：启动自动扫描或注解装配时的命名空间
+	xmlns:aop：启动AOP功能时的命名空间
+	xmlns:tx：启动声明事务时的命名空间
+	xsi:schemaLocation：与上述命名空间定义相配套的schema定义文件的装载路径
+	default-lazy-init：延迟初始化
+-->
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xsi:schemaLocation="
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.3.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.3.xsd
+		http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-4.3.xsd
+		http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-4.3.xsd"
+	default-lazy-init="true">
+
+	<!-- 引入属性文件 -->
+	<context:property-placeholder location="classpath:config.properties" ignore-resource-not-found="true" ignore-unresolvable="true" />
+
+	<!-- 开启注解处理器 -->
+	<context:annotation-config/>
+	
+	<!-- 开启组件自动扫描，扫描文件中的注解，扫描路径由base-package属性指定 -->
+	<context:component-scan base-package="com.bonc.spider" />
+	
+	<!-- 开启基于@AspectJ切面的注解处理器 -->
+	<!-- <aop:aspectj-autoproxy/> -->
+	
+	<!-- <bean id="切面实例名称" class="切面类全名" />
+	<aop:config>
+		<aop:aspect id="切面ID" ref="切面实例名称">
+			<aop:pointcut id="切入点名称" expression="切入点正则表达式" />
+			<aop:before pointcut-ref="切入点名称" method="切面中用做前置通知的方法名" />
+			<aop:after-returning pointcut-ref="切入点名称" method="切面中用做后置通知的方法名" />
+			<aop:after-throwing pointcut-ref="切入点名称" method="切面中用做异常通知的方法名" />
+			<aop:after pointcut-ref="切入点名称" method="切面中用做最终通知的方法名" />
+			<aop:around pointcut-ref="切入点名称" method="切面中用做环绕通知的方法名" />
+		</aop:aspect>
+	</aop:config> -->
+    
+	<!-- 数据库连接池 -->
+	<!-- Dbcp -->
+    <bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource" destroy-method="close">
+		<property name="driverClassName" value="${jdbc.driver}"/>
+		<property name="url" value="${jdbc.url}"/>
+		<property name="username" value="${jdbc.username}"/>
+		<property name="password" value="${jdbc.password}"/>
+		<property name="initialSize" value="${dbcp.initial_size}" />
+		<property name="minIdle" value="${dbcp.min_idle}" />
+		<property name="maxActive" value="${dbcp.max_active}" />
+		<property name="maxWait" value="${dbcp.max_wait}" />
+		<property name="removeAbandonedTimeout" value="${dbcp.remove_abandoned_timeout}" />
+	</bean>
+	<!-- C3p0 -->
+	<!-- <bean id="dataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource" destroy-method="close">
+		<property name="driverClass" value="${jdbc.driver}" />
+		<property name="jdbcUrl" value="${jdbc.url}" />
+		<property name="user" value="${jdbc.username}" />
+		<property name="password" value="${jdbc.password}" />
+		<property name="initialPoolSize" value="${c3p0.initial_pool_size}" />
+		<property name="minPoolSize" value="${c3p0.min_pool_size}" />
+		<property name="maxPoolSize" value="${c3p0.max_pool_size}" />
+		<property name="maxIdleTime" value="${c3p0.max_idle_time}" />
+		<property name="acquireIncrement" value="${c3p0.acquire_increment}" />
+		<property name="checkoutTimeout" value="${c3p0.checkout_timeout}" />
+		<property name="testConnectionOnCheckin" value="false"/>
+		<property name="testConnectionOnCheckout" value="true"/>
+	</bean> -->
+	
+	<!-- 配置整合Mybatis过程 -->
+	<!-- 配置SqlSessionFactory对象 -->
+	<bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+		<!--注入数据库连接池-->
+		<property name="dataSource" ref="dataSource"/>
+		<!--配置Mybatis全局配置文件:mybatis/config.xml-->
+		<property name="configLocation" value="classpath:mybatis/config.xml"/>
+		<!--扫描entity包,使用别名,多个用;隔开-->
+		<property name="typeAliasesPackage" value="com.bonc.spider.entity"/>
+		<!--扫描sql配置文件:mapper需要的xml文件-->
+		<property name="mapperLocations" value="classpath:mapper/*.xml"/>
+	</bean>
+    
+    <!-- 自动扫描映射器 -->
+    <bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+        <!-- 注入SqlSessionFactory -->
+        <property name="sqlSessionFactoryBeanName" value="sqlSessionFactory"/>
+        <!-- 配置需要扫描的Dao接口包,动态实现Dao接口,注入到spring容器 -->
+        <property name="basePackage" value="com.bonc.spider.dao"/>
+    </bean>
+  
+    <!-- 配置事务管理器 -->
+    <bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <property name="dataSource" ref="dataSource" />
+    </bean>
+
+    <!-- 开启事务注解驱动 -->  
+	<tx:annotation-driven transaction-manager="transactionManager" />
+	
+	<!-- 配置事务传播特性 -->
+	<!-- <tx:advice id="transactionAdvice" transaction-manager="transactionManager">
+		<tx:attributes>
+			方法以get开头的，不使用事务
+			<tx:method name="get*" read-only="true" propagation="NOT_SUPPORTED" />
+			其他方法以默认事务执行
+			<tx:method name="*" />
+		</tx:attributes>
+	</tx:advice> -->
+	
+	<!-- 使用AOP技术实现事务管理 -->
+	<!-- <aop:config>
+		<aop:pointcut id="事务切入点名称"  expression="事务切入点正则表达式" />
+		<aop:advisor advice-ref="transactionAdvice" pointcut-ref="事务切入点名称" />
+	</aop:config> -->
+
+	<!-- properties文件读取到内存 -->
+	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
+		<property name="basenames">  
+			<list>  
+				<value>messages</value>
+			</list>  
+		</property>
+	</bean>
+    
+	<!-- 实现国际化 -->
+	<bean id="localeResolver" class="org.springframework.web.servlet.i18n.FixedLocaleResolver" />
+    
+	<!-- 配置异常处理 -->
+	<!-- <bean id="exceptionResolver" class="org.springframework.web.servlet.handler.SimpleMappingExceptionResolver">
+		<property name="exceptionMappings">   
+			<props>   
+				<prop key="com.bonc.spider.exception.SystemException">system_exception</prop>
+				<prop key="com.bonc.spider.exception.AccessException">system_exception</prop>
+				<prop key="com.bonc.spider.exception.MngAuthorizationException">redirect:/manager/toLogin.do</prop>   
+				<prop key="java.lang.exception">system_exception</prop>  
+			</props>   
+		</property>   
+	</bean> -->
+     
+	<!-- 读取配置文件到 configProperties 对象中-->
+	<bean id="configProperties" class="org.springframework.beans.factory.config.PropertiesFactoryBean">
+		<property name="locations">
+			<list>
+				<value>classpath:config.properties</value>
+			</list>
+		</property>
+	</bean>
+	<bean id="propertyConfigurer" class="org.springframework.beans.factory.config.PreferencesPlaceholderConfigurer">
+		<property name="properties" ref="configProperties"/>
+	</bean>
+</beans>
